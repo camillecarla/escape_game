@@ -33,7 +33,7 @@
     <section class="card" aria-labelledby="title">
       <header>
         <h1 id="title">Portail secret</h1>
-        <p class="lead">Entrez le mot de passe pour accéder au document secret. Indices disponibles dans le jeu.</p>
+        <p class="lead">Entrez le mot de passe pour accéder au document secret. La première lettre est une majuscule.</p>
       </header>
 
       <div class="input-row" role="group" aria-label="Champ mot de passe">
@@ -51,25 +51,15 @@
         <div class="hint">Essais restants: <span id="tries">5</span></div>
         <div id="lockinfo"></div>
       </div>
-
-      <div class="footer">Pour sécuriser réellement l'accès, utilisez une validation côté serveur. (Voir notes ci-dessous)</div>
     </section>
   </div>
 
   <script>
-    // CONFIGURATION
-    // Remplacez SECRET_URL par votre document secret (relative ou absolue).
-    const SECRET_URL = 'https://emiliekaufmann.github.io/Cours1_RL21.pdf'; // <-- changer ici
-
-    // Stockez ici le hash SHA-256 du mot de passe désiré (hexadecimal, minuscule)
-    // Pour générer le hash dans la console: await computeHash('votreMotDePasse')
+    const SECRET_URL = 'https://emiliekaufmann.github.io/Cours1_RL21.pdf'; 
     const SECRET_HASH = 'a0ccd32e5c55cb93abcb28100f66c892f9ce6e908c6e835ca936ec28b8c1cfdb';
-
-    // Réglages
     const MAX_TRIES = 5;
-    const LOCK_SECONDS = 30; // verrouillage après échec
+    const LOCK_SECONDS = 30; 
 
-    // état
     let triesLeft = MAX_TRIES;
     let lockedUntil = 0;
 
@@ -138,15 +128,12 @@
       }, 250);
     }
 
-    // Utilitaire: calcule SHA-256 et renvoie hex
     async function computeHash(text){
       const enc = new TextEncoder().encode(text);
       const buf = await crypto.subtle.digest('SHA-256', enc);
       return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
     }
-
-    // Pour aider le créateur: affichage de hash dans la console si besoin
-    // Usage: computeHash('monNouveauMDP').then(h=>console.log(h))
+    
   </script>
 </body>
 </html>
