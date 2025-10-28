@@ -1,139 +1,171 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Escape Game — Entrée secrète</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Escape Game — Identité du tueur</title>
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#8b5cf6;--muted:#9aa4b2;--glass:rgba(255,255,255,0.04)}
+    :root{--bg:#071026;--card:#0b1220;--accent:#ef4444;--muted:#9aa4b2;--glass:rgba(255,255,255,0.03)}
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:#e6eef6;background:radial-gradient(1200px 600px at 10% 10%, rgba(139,92,246,0.12), transparent), radial-gradient(900px 500px at 90% 90%, rgba(14,165,233,0.06), transparent), var(--bg);}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;color:#eaf2ff;background:radial-gradient(800px 400px at 10% 20%, rgba(239,68,68,0.06), transparent), linear-gradient(180deg,#061124 0%, #071026 100%);}
     .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:2rem}
-    .card{width:100%;max-width:520px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(6px);padding:2rem;border-radius:16px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    .card{width:100%;max-width:720px;padding:2rem;border-radius:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);box-shadow:0 12px 40px rgba(2,6,23,0.6)}
     h1{margin:0 0 .25rem;font-size:1.5rem}
-    p.lead{margin:0 0 1.25rem;color:var(--muted)}
-    .input-row{display:flex;gap:.75rem;align-items:center}
-    .field{flex:1;position:relative}
-    input[type=password]{width:100%;padding:12px 44px 12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:1rem;outline:none;transition:box-shadow .15s, transform .06s}
-    input[type=password]:focus{box-shadow:0 6px 20px rgba(139,92,246,0.12);transform:translateY(-1px)}
-    .eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-    button.btn{padding:12px 18px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),#06b6d4);color:white;font-weight:600;cursor:pointer;box-shadow:0 8px 20px rgba(11,17,38,0.6);transition:transform .12s}
-    button.btn:active{transform:translateY(1px)}
+    p.lead{margin:0 0 1rem;color:var(--muted)}
+    .banner{display:flex;align-items:center;gap:.75rem;padding:12px;border-radius:10px;background:linear-gradient(90deg, rgba(239,68,68,0.12), rgba(245,158,11,0.06));border:1px solid rgba(239,68,68,0.14);color:#ffeef0;margin-bottom:1rem}
+    .banner strong{color:#ffdede}
+    .row{display:flex;gap:.75rem;align-items:center}
+    input[type=text]{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:var(--glass);color:inherit;font-size:1rem}
+    button.btn{padding:12px 16px;border-radius:10px;border:0;background:linear-gradient(90deg,#ef4444,#f97316);color:white;font-weight:700;cursor:pointer}
     .status{margin-top:1rem;min-height:1.25rem;color:var(--muted)}
-    .status.good{color:#86efac}
     .status.bad{color:#ffb4b4}
-    .meta{margin-top:1rem;font-size:.85rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-    .hint{font-style:italic}
-    .footer{margin-top:1.25rem;text-align:center;color:var(--muted);font-size:.83rem}
-    @media (max-width:520px){.card{padding:1.25rem}}
+    .status.good{color:#86efac}
+    .meta{margin-top:1rem;color:var(--muted);display:flex;justify-content:space-between}
+    .full-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(2px);color:white;z-index:60}
+    .full-screen[hidden]{display:none!important}
+    .full-screen h2{font-size:3rem;margin:0}
+    .muted-small{font-size:.85rem;color:var(--muted)}
   </style>
 </head>
 <body>
   <div class="wrap">
     <section class="card" aria-labelledby="title">
-      <header>
-        <h1 id="title">Portail secret</h1>
-        <p class="lead">Entrez le mot de passe pour accéder au document secret. La première lettre est une majuscule.</p>
-      </header>
-
-      <div class="input-row" role="group" aria-label="Champ mot de passe">
-        <div class="field">
-          <label for="pass" class="sr-only" style="display:none">Mot de passe</label>
-          <input id="pass" type="password" inputmode="text" autocomplete="off" placeholder="Entrez le mot de passe" aria-describedby="status" />
-          <div id="toggle" class="eye" title="Afficher/masquer">👁️</div>
+      <div class="banner" role="alert">
+        <div>⚠️</div>
+        <div>
+          <div><strong>Attention :</strong> votre localisation sera envoyée au tueur en cas de trop nombreux échecs.</div>
         </div>
-        <button id="submit" class="btn" aria-live="polite">Valider</button>
       </div>
 
-      <div id="status" class="status" role="status" aria-atomic="true"></div>
+      <header>
+        <h1 id="title">Qui est le tueur ?</h1>
+        <p class="lead">Indiquez le nom du serial killer d'après les indices.</p>
+      </header>
+
+      <div class="row">
+        <input id="answer" type="text" placeholder="Nom du tueur" autocomplete="off" />
+        <button id="submit" class="btn">Valider</button>
+      </div>
+
+      <div id="status" class="status"></div>
 
       <div class="meta">
-        <div class="hint">Essais restants: <span id="tries">5</span></div>
-        <div id="lockinfo"></div>
+        <div>Essais restants : <strong id="tries">4</strong></div>
+        <div class="muted-small">Vous êtes si près du but...</div>
       </div>
     </section>
   </div>
 
+  <div id="overlay" class="full-screen" hidden>
+    <div style="text-align:center;max-width:900px;padding:1rem">
+      <h2 id="overlay-title">GAME OVER</h2>
+      <p id="overlay-msg" style="font-size:1.15rem;margin-top:.5rem"></p>
+      <div style="margin-top:1rem; display:flex; gap:1rem; justify-content:center;">
+          <button id="restart" class="btn">Recommencer</button>
+          <button id="win" class="btn" hidden>Voir la récompense</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const SECRET_URL = 'https://emiliekaufmann.github.io/Cours1_RL21.pdf'; 
-    const SECRET_HASH = 'a0ccd32e5c55cb93abcb28100f66c892f9ce6e908c6e835ca936ec28b8c1cfdb';
-    const MAX_TRIES = 5;
-    const LOCK_SECONDS = 30; 
+    const SECRET_HASH = '887c6ef0cdc42337c734e4e4cfaae0c8b6cbda152ebb91ab2970c5c0f2d82245';
+    const MAX_TRIES = 4;
+    const LOCK_DURATION = 10;
 
     let triesLeft = MAX_TRIES;
-    let lockedUntil = 0;
+    let lockUntil = 0;
 
-    const pass = document.getElementById('pass');
+    const answerEl = document.getElementById('answer');
     const submit = document.getElementById('submit');
     const status = document.getElementById('status');
     const triesEl = document.getElementById('tries');
-    const lockinfo = document.getElementById('lockinfo');
-    const toggle = document.getElementById('toggle');
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayMsg = document.getElementById('overlay-msg');
+    const restart = document.getElementById('restart');
+    const win = document.getElementById('win');
+      
+    submit.addEventListener('click', onSubmit);
+    answerEl.addEventListener('keydown', e => { if (e.key === 'Enter') onSubmit(); });
+    restart.addEventListener('click', resetGame);
+    win.addEventListener('click', seeReward);
 
-    triesEl.textContent = triesLeft;
+    function showStatus(msg, ok) {
+      status.textContent = msg;
+      status.className = 'status' + (ok === true ? ' good' : ok === false ? ' bad' : '');
+    }
 
-    toggle.addEventListener('click', () => {
-      pass.type = pass.type === 'password' ? 'text' : 'password';
-      toggle.textContent = pass.type === 'password' ? '👁️' : '🙈';
-    });
-
-    submit.addEventListener('click', tryPassword);
-    pass.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryPassword(); });
-
-    async function tryPassword(){
-      if (Date.now() < lockedUntil) return;
-      const val = pass.value || '';
-      if (!val){ showStatus('Entrez un mot de passe.', false); return; }
-
-      showStatus('Vérification…', null);
-      const h = await computeHash(val);
-
-      if (h === SECRET_HASH){
-        showStatus('✅ Mot de passe correct — redirection…', true);
-        // léger délai pour l'effet
-        setTimeout(() => { window.location.href = SECRET_URL; }, 700);
+    async function onSubmit() {
+      if (Date.now() < lockUntil) {
+        showStatus('Verrouillage en cours…', false);
         return;
       }
 
-      triesLeft -= 1;
+      const val = answerEl.value.trim().toLowerCase();
+      if (!val) return showStatus('Entrez un nom.', false);
+
+      showStatus('Vérification...', null);
+      const h = await computeHash(val);
+
+      if (h === SECRET_HASH) {
+        showStatus('✅ Bonne réponse !', true);
+        setTimeout(() => {
+          overlayTitle.textContent = 'FÉLICITATIONS';
+          overlayMsg.textContent = 'Vous avez trouvé l’identité du tueur.';
+          restart.hidden = true;
+          win.hidden = false;
+          overlay.hidden = false;
+        }, 500);
+        return;
+      }
+
+      triesLeft--;
       triesEl.textContent = triesLeft;
-      if (triesLeft <= 0){
-        lockedUntil = Date.now() + LOCK_SECONDS * 1000;
-        showStatus(`🔒 Trop d'échecs — verrouillage pendant ${LOCK_SECONDS} secondes.`, false);
-        lockCountdown();
+      if (triesLeft <= 0) {
+        showStatus('Trop d’erreurs…', false);
+        lockUntil = Date.now() + LOCK_DURATION * 1000;
+        dramatizeLockSequence();
       } else {
-        showStatus(`❌ Mot de passe incorrect — ${triesLeft} essais restants.`, false);
+        showStatus(`❌ Mauvaise réponse (${triesLeft} essais restants)`, false);
       }
     }
 
-    function showStatus(msg, ok){
-      status.textContent = msg;
-      status.classList.remove('good','bad');
-      if (ok === true) status.classList.add('good');
-      if (ok === false) status.classList.add('bad');
+    function dramatizeLockSequence() {
+      overlayTitle.textContent = 'LE TUEUR EST EN ROUTE';
+      overlay.hidden = false;
+      restart.hidden = true;
+      let remaining = LOCK_DURATION;
+      const timer = setInterval(() => {
+        remaining--;
+        overlayMsg.innerHTML = `${remaining}s restantes<br><span class="muted-small"></span>`;
+        if (remaining <= 0) {
+          clearInterval(timer);
+          overlayTitle.textContent = 'VOUS ÊTES MORTES';
+          overlayMsg.innerHTML = '<strong>Le tueur est arrivé.</strong><br><span class="muted-small">Fin de la partie</span>';
+          restart.hidden = false;
+a        }
+      }, 1000);
     }
 
-    function lockCountdown(){
-      const interval = setInterval(()=>{
-        const remaining = Math.max(0, Math.ceil((lockedUntil - Date.now())/1000));
-        if (remaining <= 0){
-          clearInterval(interval);
-          triesLeft = MAX_TRIES;
-          triesEl.textContent = triesLeft;
-          lockinfo.textContent = '';
-          showStatus('Vous pouvez réessayer.', null);
-          return;
-        }
-        lockinfo.textContent = `Verrouillé: ${remaining}s`;
-      }, 250);
+    function resetGame() {
+      triesLeft = MAX_TRIES;
+      triesEl.textContent = triesLeft;
+      answerEl.value = '';
+      overlay.hidden = true;
+      restart.hidden = false;
+      win.hidden = true;
+      showStatus('Nouvelle partie.', null);
     }
 
-    async function computeHash(text){
+    function seeReward() {
+      window.location.href = "reward.html"; 
+    }
+
+    async function computeHash(text) {
       const enc = new TextEncoder().encode(text);
       const buf = await crypto.subtle.digest('SHA-256', enc);
-      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
-    
   </script>
 </body>
 </html>
