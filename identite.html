@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Escape Game — Identité du tueur</title>
+  <style>
+    :root{--bg:#071026;--card:#0b1220;--accent:#ef4444;--muted:#9aa4b2;--glass:rgba(255,255,255,0.03)}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;color:#eaf2ff;background:radial-gradient(800px 400px at 10% 20%, rgba(239,68,68,0.06), transparent), linear-gradient(180deg,#061124 0%, #071026 100%);}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:2rem}
+    .card{width:100%;max-width:720px;padding:2rem;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);box-shadow:0 12px 40px rgba(2,6,23,0.6)}
+    h1{margin:0 0 .25rem;font-size:1.5rem}
+    p.lead{margin:0 0 1rem;color:var(--muted)}
+    .row{display:flex;gap:.75rem;align-items:center}
+    input[type=text]{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:1rem}
+    button.btn{padding:12px 16px;border-radius:10px;border:0;background:linear-gradient(90deg,#ef4444,#f97316);color:white;font-weight:700;cursor:pointer}
+    .status{margin-top:1rem;min-height:1.25rem;color:var(--muted)}
+    .status.bad{color:#ffb4b4}
+    .status.good{color:#86efac}
+    .meta{margin-top:1rem;color:var(--muted);display:flex;justify-content:space-between}
+    .dramatic{margin-top:1.25rem;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.03)}
+    .full-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(0deg, rgba(0,0,0,0.85), rgba(0,0,0,0.85));backdrop-filter: blur(2px);color:white;z-index:60}
+    .full-screen h2{font-size:3rem;margin:0}
+    .muted-small{font-size:.85rem;color:var(--muted)}
+    @media (max-width:600px){.card{padding:1.25rem}.full-screen h2{font-size:2rem}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card" aria-labelledby="title">
+      <header>
+        <h1 id="title">Qui est le tueur ?</h1>
+        <p class="lead">Identifiez l'auteur des meurtres d'après les indices.</p>
+      </header>
+
+      <div class="row" role="group" aria-label="Réponse suspect">
+        <input id="answer" type="text" placeholder="Nom du serial killer" autocomplete="off" aria-describedby="status" />
+        <button id="submit" class="btn">Valider</button>
+      </div>
+
+      <div id="status" class="status" role="status" aria-atomic="true"></div>
+
+      <div class="meta">
+        <div class="muted-small">Essais restants : <strong id="tries">4</strong></div>
+        <div class="muted-small">Conséquence : simulation dramatique (pas d'envoi réel)</div>
+      </div>
+
+      <div class="dramatic muted-small">Après <strong id="maxtries">5</strong> échecs, un avertissement sera affiché : « Attention, votre localisation sera envoyée au tueur ». Si les joueurs continuent et dépassent le verrouillage, l'écran final affichera <em>« VOUS ÊTES MORTES »</em>.</div>
+    </section>
+  </div>
+
+  <!-- ECRAN GAME OVER / WARNING -->
+  <div id="overlay" class="full-screen" hidden>
+    <div style="text-align:center;max-width:900px;padding:1rem">
+      <h2 id="overlay-title">GAME OVER</h2>
+      <p id="overlay-msg" style="font-size:1.15rem;margin-top:.5rem">Texte dramatique</p>
+      <div style="margin-top:1rem">
+        <button id="restart" class="btn">Recommencer</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    const SECRET_HASH = '887c6ef0cdc42337c734e4e4cfaae0c8b6cbda152ebb91ab2970c5c0f2d82245';
+
+    const MAX_TRIES = 5;          // nombre d'essais autorisés
+    const LOCK_DURATION = 20;     // secondes de mise en scène après épuisement
+    const SHOW_WARNING_AFTER = 0; // nombre d'échecs avant afficher le message "localisation envoyée"
+
+    let triesLeft = MAX_TRIES;
+    let lockUntil = 0;
+
+    const answerEl = document.getElementById('answer');
+    const submit = document.getElementById('submit');
+    const status = document.getElementById('status');
+    const triesEl = document.getElementById('tries');
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayMsg = document.getElementById('overlay-msg');
+    const restart = document.getElementById('restart');
+    const maxtries = document.getElementById('maxtries');
+
+    triesEl.textContent = triesLeft;
+    maxtries.textContent = MAX_TRIES;
+
+    submit.addEventListener('click', onSubmit);
+    answerEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') onSubmit(); });
+    restart.addEventListener('click', resetGame);
+
+    async function onSubmit(){
+      if (Date.now() < lockUntil){ showStatus('...en verrouillage', false); return; }
+      const val = (answerEl.value || '').trim().toLowerCase();
+      if (!val){ showStatus('Entrez une réponse.', false); return; }
+
+      showStatus('Vérification…', null);
+      const h = await computeHash(val);
+
+      if (h === SECRET_HASH){
+        showStatus('✅ Bonne réponse — accès au chapitre suivant.', true);
+        // effet dramatique puis redirection (ou révélation)
+        setTimeout(()=>{
+          overlayTitle.textContent = 'INDICE DÉVERROUILLÉ';
+          overlayMsg.innerHTML = 'Vous avez trouvé l'identité du tueur. <br>Accès à l\'indice final.';
+          showOverlay();
+        }, 600);
+        return;
+      }
+
+      // mauvaise réponse
+      triesLeft -= 1;
+      triesEl.textContent = triesLeft;
+
+      if (triesLeft <= 0){
+        // mise en scène de verrouillage et avertissement
+        showStatus('🔒 Trop d\'erreurs — verrouillage en cours.', false);
+        lockUntil = Date.now() + LOCK_DURATION * 1000;
+        dramatizeLockSequence();
+      } else {
+        showStatus(`❌ Mauvaise réponse — ${triesLeft} essais restants.`, false);
+        if (triesLeft <= (MAX_TRIES - SHOW_WARNING_AFTER)){
+          // si configuré pour afficher avertissement après X échecs
+          showSimulatedLocationWarning();
+        }
+      }
+    }
+
+    function showStatus(msg, ok){
+      status.textContent = msg;
+      status.classList.remove('good','bad');
+      if (ok === true) status.classList.add('good');
+      if (ok === false) status.classList.add('bad');
+    }
+
+    function showOverlay(){
+      overlay.hidden = false;
+    }
+
+    function hideOverlay(){
+      overlay.hidden = true;
+    }
+
+    function resetGame(){
+      triesLeft = MAX_TRIES;
+      triesEl.textContent = triesLeft;
+      lockUntil = 0;
+      answerEl.value = '';
+      hideOverlay();
+      showStatus('Jeu réinitialisé. Bonne chance.', null);
+    }
+
+    function showSimulatedLocationWarning(){
+      overlayTitle.textContent = 'AVERTISSEMENT';
+      overlayMsg.innerHTML = '<strong>Attention :</strong> votre localisation sera envoyée au tueur.<br><span class="muted-small">(SIMULATION — AUCUNE TRANSMISSION RÉELLE)</span>';
+      showOverlay();
+    }
+
+    function dramatizeLockSequence(){
+      // séquence dramatique : compte à rebours puis écran final
+      let remaining = Math.ceil((lockUntil - Date.now())/1000);
+      overlayTitle.textContent = 'VERROUILLAGE';
+      overlayMsg.innerHTML = `Verrouillage actif — ${remaining}s`;
+      showOverlay();
+
+      const iv = setInterval(()=>{
+        remaining = Math.max(0, Math.ceil((lockUntil - Date.now())/1000));
+        overlayMsg.innerHTML = `Verrouillage actif — ${remaining}s` + '<br><span class="muted-small">(simulation uniquement)</span>';
+        if (remaining <= 0){
+          clearInterval(iv);
+          // écran final dramatique
+          setTimeout(()=>{
+            overlayTitle.textContent = 'VOUS ÊTES MORTES';
+            overlayMsg.innerHTML = '<strong>Le tueur est arrivé.</strong><br><span class="muted-small">FIN DE LA PARTIE</span>';
+          }, 800);
+        }
+      }, 250);
+    }
+
+    async function computeHash(text){
+      const enc = new TextEncoder().encode(text);
+      const buf = await crypto.subtle.digest('SHA-256', enc);
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+
+  </script>
+</body>
+</html>
