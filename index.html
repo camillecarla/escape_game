@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Escape Game — Entrée secrète</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#8b5cf6;--muted:#9aa4b2;--glass:rgba(255,255,255,0.04)}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:#e6eef6;background:radial-gradient(1200px 600px at 10% 10%, rgba(139,92,246,0.12), transparent), radial-gradient(900px 500px at 90% 90%, rgba(14,165,233,0.06), transparent), var(--bg);}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:2rem}
+    .card{width:100%;max-width:520px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(6px);padding:2rem;border-radius:16px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    h1{margin:0 0 .25rem;font-size:1.5rem}
+    p.lead{margin:0 0 1.25rem;color:var(--muted)}
+    .input-row{display:flex;gap:.75rem;align-items:center}
+    .field{flex:1;position:relative}
+    input[type=password]{width:100%;padding:12px 44px 12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:1rem;outline:none;transition:box-shadow .15s, transform .06s}
+    input[type=password]:focus{box-shadow:0 6px 20px rgba(139,92,246,0.12);transform:translateY(-1px)}
+    .eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    button.btn{padding:12px 18px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),#06b6d4);color:white;font-weight:600;cursor:pointer;box-shadow:0 8px 20px rgba(11,17,38,0.6);transition:transform .12s}
+    button.btn:active{transform:translateY(1px)}
+    .status{margin-top:1rem;min-height:1.25rem;color:var(--muted)}
+    .status.good{color:#86efac}
+    .status.bad{color:#ffb4b4}
+    .meta{margin-top:1rem;font-size:.85rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+    .hint{font-style:italic}
+    .footer{margin-top:1.25rem;text-align:center;color:var(--muted);font-size:.83rem}
+    @media (max-width:520px){.card{padding:1.25rem}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card" aria-labelledby="title">
+      <header>
+        <h1 id="title">Portail secret</h1>
+        <p class="lead">Entrez le mot de passe pour accéder au document secret. Indices disponibles dans le jeu.</p>
+      </header>
+
+      <div class="input-row" role="group" aria-label="Champ mot de passe">
+        <div class="field">
+          <label for="pass" class="sr-only" style="display:none">Mot de passe</label>
+          <input id="pass" type="password" inputmode="text" autocomplete="off" placeholder="Entrez le mot de passe" aria-describedby="status" />
+          <div id="toggle" class="eye" title="Afficher/masquer">👁️</div>
+        </div>
+        <button id="submit" class="btn" aria-live="polite">Valider</button>
+      </div>
+
+      <div id="status" class="status" role="status" aria-atomic="true"></div>
+
+      <div class="meta">
+        <div class="hint">Essais restants: <span id="tries">5</span></div>
+        <div id="lockinfo"></div>
+      </div>
+
+      <div class="footer">Pour sécuriser réellement l'accès, utilisez une validation côté serveur. (Voir notes ci-dessous)</div>
+    </section>
+  </div>
+
+  <script>
+    // CONFIGURATION
+    // Remplacez SECRET_URL par votre document secret (relative ou absolue).
+    const SECRET_URL = 'https://emiliekaufmann.github.io/Cours1_RL21.pdf'; // <-- changer ici
+
+    // Stockez ici le hash SHA-256 du mot de passe désiré (hexadecimal, minuscule)
+    // Pour générer le hash dans la console: await computeHash('votreMotDePasse')
+    const SECRET_HASH = 'a0ccd32e5c55cb93abcb28100f66c892f9ce6e908c6e835ca936ec28b8c1cfdb';
+
+    // Réglages
+    const MAX_TRIES = 5;
+    const LOCK_SECONDS = 30; // verrouillage après échec
+
+    // état
+    let triesLeft = MAX_TRIES;
+    let lockedUntil = 0;
+
+    const pass = document.getElementById('pass');
+    const submit = document.getElementById('submit');
+    const status = document.getElementById('status');
+    const triesEl = document.getElementById('tries');
+    const lockinfo = document.getElementById('lockinfo');
+    const toggle = document.getElementById('toggle');
+
+    triesEl.textContent = triesLeft;
+
+    toggle.addEventListener('click', () => {
+      pass.type = pass.type === 'password' ? 'text' : 'password';
+      toggle.textContent = pass.type === 'password' ? '👁️' : '🙈';
+    });
+
+    submit.addEventListener('click', tryPassword);
+    pass.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryPassword(); });
+
+    async function tryPassword(){
+      if (Date.now() < lockedUntil) return;
+      const val = pass.value || '';
+      if (!val){ showStatus('Entrez un mot de passe.', false); return; }
+
+      showStatus('Vérification…', null);
+      const h = await computeHash(val);
+
+      if (h === SECRET_HASH){
+        showStatus('✅ Mot de passe correct — redirection…', true);
+        // léger délai pour l'effet
+        setTimeout(() => { window.location.href = SECRET_URL; }, 700);
+        return;
+      }
+
+      triesLeft -= 1;
+      triesEl.textContent = triesLeft;
+      if (triesLeft <= 0){
+        lockedUntil = Date.now() + LOCK_SECONDS * 1000;
+        showStatus(`🔒 Trop d'échecs — verrouillage pendant ${LOCK_SECONDS} secondes.`, false);
+        lockCountdown();
+      } else {
+        showStatus(`❌ Mot de passe incorrect — ${triesLeft} essais restants.`, false);
+      }
+    }
+
+    function showStatus(msg, ok){
+      status.textContent = msg;
+      status.classList.remove('good','bad');
+      if (ok === true) status.classList.add('good');
+      if (ok === false) status.classList.add('bad');
+    }
+
+    function lockCountdown(){
+      const interval = setInterval(()=>{
+        const remaining = Math.max(0, Math.ceil((lockedUntil - Date.now())/1000));
+        if (remaining <= 0){
+          clearInterval(interval);
+          triesLeft = MAX_TRIES;
+          triesEl.textContent = triesLeft;
+          lockinfo.textContent = '';
+          showStatus('Vous pouvez réessayer.', null);
+          return;
+        }
+        lockinfo.textContent = `Verrouillé: ${remaining}s`;
+      }, 250);
+    }
+
+    // Utilitaire: calcule SHA-256 et renvoie hex
+    async function computeHash(text){
+      const enc = new TextEncoder().encode(text);
+      const buf = await crypto.subtle.digest('SHA-256', enc);
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+
+    // Pour aider le créateur: affichage de hash dans la console si besoin
+    // Usage: computeHash('monNouveauMDP').then(h=>console.log(h))
+  </script>
+</body>
+</html>
