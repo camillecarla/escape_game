@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Escape Game — Entrée du code secret</title>
+  <style>
+    :root {
+      --bg:#0f1724;
+      --card:#0b1220;
+      --accent:#8b5cf6;
+      --muted:#9aa4b2;
+      --glass:rgba(255,255,255,0.04);
+    }
+    *{box-sizing:border-box}
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      color:#e6eef6;
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(139,92,246,0.12), transparent),
+        radial-gradient(900px 500px at 90% 90%, rgba(14,165,233,0.06), transparent),
+        var(--bg);
+    }
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:2rem;
+    }
+    .card{
+      width:100%;
+      max-width:520px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.04);
+      backdrop-filter:blur(6px);
+      padding:2rem;
+      border-radius:16px;
+      box-shadow:0 10px 30px rgba(2,6,23,0.6);
+      text-align:center;
+    }
+    h1{margin:0 0 .25rem;font-size:1.5rem}
+    p.lead{margin:0 0 1.25rem;color:var(--muted)}
+    .input-row{display:flex;gap:.75rem;align-items:center;justify-content:center}
+    .field{flex:1;position:relative}
+    input[type=text]{
+      width:100%;
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.04);
+      background:var(--glass);
+      color:inherit;
+      font-size:1rem;
+      outline:none;
+      transition:box-shadow .15s, transform .06s;
+      text-align:center;
+      letter-spacing:2px;
+    }
+    input[type=text]:focus{box-shadow:0 6px 20px rgba(139,92,246,0.12);transform:translateY(-1px)}
+    button.btn{
+      padding:12px 18px;
+      border-radius:10px;
+      border:0;
+      background:linear-gradient(90deg,var(--accent),#06b6d4);
+      color:white;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(11,17,38,0.6);
+      transition:transform .12s;
+    }
+    button.btn:active{transform:translateY(1px)}
+    .status{margin-top:1rem;min-height:1.25rem;color:var(--muted)}
+    .status.good{color:#86efac}
+    .status.bad{color:#ffb4b4}
+    .meta{margin-top:1rem;font-size:.85rem;color:var(--muted)}
+    .footer{margin-top:1.25rem;text-align:center;color:var(--muted);font-size:.83rem}
+    #retry{display:none;margin-top:1rem;}
+    @media (max-width:520px){.card{padding:1.25rem}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card" aria-labelledby="title">
+      <header>
+        <h1 id="title">Entrée du code secret</h1>
+        <p class="lead">Agents, entrez le code que vous avez déchiffré à partir des indices.<br>
+        Chaque erreur pourrait compromettre la mission.</p>
+      </header>
+
+      <div class="input-row" role="group" aria-label="Champ code">
+        <div class="field">
+          <input id="code" type="text" inputmode="text" autocomplete="off" placeholder="Entrez le code" aria-describedby="status" />
+        </div>
+        <button id="submit" class="btn">Valider</button>
+      </div>
+
+      <div id="status" class="status" role="status"></div>
+
+      <div class="meta">
+        <div>Essais restants : <span id="tries">4</span></div>
+      </div>
+
+      <button id="retry" class="btn">Réessayer</button>
+
+      <div class="footer">🕵️ Mission confidentielle — Top secret</div>
+    </section>
+  </div>
+
+  <script>
+    const SECRET_HASH = '5ebdce2857ce9fd51f06ba729f81969077f4dd1e4f4175b316f9d53c77443c24';
+    const MAX_TRIES = 4;
+    const codeInput = document.getElementById('code');
+    const submit = document.getElementById('submit');
+    const status = document.getElementById('status');
+    const triesEl = document.getElementById('tries');
+    const retry = document.getElementById('retry');
+    let triesLeft = MAX_TRIES;
+
+    submit.addEventListener('click', checkCode);
+    codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkCode(); });
+    retry.addEventListener('click', resetGame);
+
+    async function checkCode(){
+      const val = codeInput.value.trim().toLowerCase(); 
+      if(!val){ showStatus("Entrez un code.", false); return; }
+
+      showStatus("Vérification…", null);
+      const h = await computeHash(val);
+
+      if(h === SECRET_HASH){
+        showStatus("✅ Félicitations, vous avez trouvé le bon code !", true);
+        setTimeout(()=> window.location.href = "liste_suspects.pdf", 1000);
+      } else {
+        triesLeft--;
+        triesEl.textContent = triesLeft;
+        if(triesLeft <= 0){
+          showStatus("💀 Trop d'échecs — mission compromise.", false);
+          codeInput.disabled = true;
+          submit.disabled = true;
+          retry.style.display = 'inline-block';
+        } else {
+          showStatus(`❌ Mauvais code — ${triesLeft} essais restants.`, false);
+        }
+      }
+    }
+
+    function resetGame(){
+      triesLeft = MAX_TRIES;
+      triesEl.textContent = triesLeft;
+      codeInput.disabled = false;
+      submit.disabled = false;
+      codeInput.value = '';
+      retry.style.display = 'none';
+      showStatus("Nouvelle tentative. Bonne chance, agents.", null);
+      codeInput.focus();
+    }
+
+    function showStatus(msg, ok){
+      status.textContent = msg;
+      status.classList.remove('good','bad');
+      if(ok === true) status.classList.add('good');
+      if(ok === false) status.classList.add('bad');
+    }
+
+    async function computeHash(text){
+      const enc = new TextEncoder().encode(text);
+      const buf = await crypto.subtle.digest('SHA-256', enc);
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  </script>
+</body>
+</html>
