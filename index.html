@@ -80,7 +80,7 @@
 
     async function tryPassword(){
       if (Date.now() < lockedUntil) return;
-      const val = pass.value || '';
+      const val = pass.value.trim().toLowerCase();
       if (!val){ showStatus('Entrez un mot de passe.', false); return; }
 
       showStatus('Vérification…', null);
