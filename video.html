@@ -71,6 +71,28 @@
       height: 100%;
       border: 0;
     }
+    button.btn {
+      margin-top: 1.5rem;
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: 0;
+      background: linear-gradient(90deg,var(--accent),#06b6d4);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(11,17,38,0.6);
+      transition: transform .12s;
+    }
+    button.btn:active { transform: translateY(1px); }
+    #hint {
+      display: none;
+      margin-top: 1rem;
+      font-style: italic;
+      color: var(--muted);
+      background: var(--glass);
+      border-radius: 10px;
+      padding: .75rem;
+    }
     @media (max-width:600px){.card{padding:1.25rem}}
   </style>
 </head>
@@ -83,10 +105,30 @@
       </header>
 
       <div class="video-wrapper">
-          <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/AgrSbohGlKI?si=t0JJIACETW8rYQNM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-</div>
+        <iframe width="560" height="315"
+          src="https://www.youtube-nocookie.com/embed/AgrSbohGlKI?si=t0JJIACETW8rYQNM"
+          title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen>
+        </iframe>
+      </div>
+
+      <button id="hintBtn" class="btn">Afficher l'indice</button>
+      <div id="hint">Par union, veuillez comprendre la moitié de l'une et la moitié de l'autre !</div>
 
     </section>
   </div>
+
+  <script>
+    const hintBtn = document.getElementById('hintBtn');
+    const hint = document.getElementById('hint');
+
+    hintBtn.addEventListener('click', () => {
+      hint.style.display = 'block';
+      hintBtn.style.display = 'none';
+    });
+  </script>
 </body>
 </html>
