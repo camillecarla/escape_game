@@ -63,11 +63,12 @@
 
       if (checked.value === GOOD_ANSWER) {
         showStatus('🎉 Félicitations, vous êtes sur la bonne voie !', true);
-      } 
-      else { if (checked.value === BAD_ANSWER) {
-        showStatus('Mais quelle bande de racistes..., false);
-      }
-        else { showStatus('❌ Mauvaise réponse, essayez encore...', false);
+  
+      } else if (checked.value === BAD_ANSWER) {
+        showStatus('😡 Mais quelle bande de racistes...', false);
+  
+      } else {
+        showStatus('❌ Mauvaise réponse, essayez encore...', false);
       }
     });
 
