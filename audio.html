@@ -36,11 +36,10 @@
 
       <form id="quiz" class="qcm">
         <p><strong>Question :</strong> À partir de l'enregistrement audio, quel suspect pouvez-vous éliminer ?</p>
-        <label><input type="radio" name="q1" value="a"> Léo Parre</label>
-        <label><input type="radio" name="q1" value="b"> Noel Peyre</label>
+        <label><input type="radio" name="q1" value="a"> Lucas Parament</label>
+        <label><input type="radio" name="q1" value="b"> Léo Parre</label>
         <label><input type="radio" name="q1" value="c"> Eleonore Sébien</label>
-        <label><input type="radio" name="q1" value="d"> Joel Noyeux</label>
-        <label><input type="radio" name="q1" value="e"> Nordine Imouk</label>
+        <label><input type="radio" name="q1" value="d"> Nordine Imouk</label>
           
         <button type="button" id="submit" class="btn">Envoyer</button>
       </form>
@@ -50,7 +49,8 @@
   </div>
 
   <script>
-    const GOOD_ANSWER = 'c'; // ✅ bonne réponse
+    const GOOD_ANSWER = 'c'; 
+    const BAD_ANSWER = 'd';
     const submit = document.getElementById('submit');
     const status = document.getElementById('status');
 
@@ -63,8 +63,11 @@
 
       if (checked.value === GOOD_ANSWER) {
         showStatus('🎉 Félicitations, vous êtes sur la bonne voie !', true);
-      } else {
-        showStatus('❌ Mauvaise réponse, essayez encore...', false);
+      } 
+      else { if (checked.value === BAD_ANSWER) {
+        showStatus('Mais quelle bande de racistes..., false);
+      }
+        else { showStatus('❌ Mauvaise réponse, essayez encore...', false);
       }
     });
 
